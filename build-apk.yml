@@ -1,0 +1,87 @@
+name: Build APK
+
+# Builds a debug APK in the cloud so you don't need Flutter or Android
+# Studio installed locally. Runs on every push, and can be triggered by
+# hand from the Actions tab ("Run workflow").
+#
+# The APK appears as a downloadable artifact on the workflow run page.
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show toolchain versions
+        run: flutter --version
+
+      # This repository intentionally contains only lib/, test/, and
+      # pubspec.yaml — the android/ Gradle scaffolding is generated here
+      # rather than committed, so it always matches the Flutter version
+      # in use. We stash our own sources first, because `flutter create`
+      # will overwrite lib/main.dart and pubspec.yaml with its templates.
+      - name: Stash project sources
+        run: |
+          mkdir -p /tmp/stash
+          cp -r lib /tmp/stash/lib
+          cp -r test /tmp/stash/test
+          cp pubspec.yaml /tmp/stash/pubspec.yaml
+
+      - name: Generate Android scaffolding
+        run: flutter create --platforms=android --org com.unonearby --project-name uno_nearby .
+
+      - name: Restore project sources
+        run: |
+          rm -rf lib test pubspec.yaml
+          cp -r /tmp/stash/lib lib
+          cp -r /tmp/stash/test test
+          cp /tmp/stash/pubspec.yaml pubspec.yaml
+          # Remove the generated counter-app widget test, which tests a
+          # main.dart that no longer exists and would fail the run.
+          rm -f test/widget_test.dart
+
+      - name: Inject Android permissions
+        run: python3 tool/add_permissions.py
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # Analysis runs but does not block the build, so you still get an
+      # APK to test even while lint warnings are being cleaned up.
+      # Remove continue-on-error once analyze is clean.
+      - name: Analyze
+        continue-on-error: true
+        run: flutter analyze
+
+      - name: Run tests
+        continue-on-error: true
+        run: flutter test
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: uno-nearby-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error

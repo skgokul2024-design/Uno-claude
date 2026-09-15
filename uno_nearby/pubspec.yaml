@@ -1,0 +1,51 @@
+name: uno_nearby
+description: Offline real-time multiplayer UNO-style card game over local Wi-Fi. No internet required.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Local persistence (offline, on-device only)
+  sqflite: ^2.3.3
+  path: ^1.9.0
+  path_provider: ^2.1.3
+
+  # Permissions (Android runtime permissions for local networking / nearby discovery)
+  permission_handler: ^11.3.1
+
+  # Networking utilities: NOT used for internet access.
+  # network_info_plus reads the device's local Wi-Fi/hotspot IP so we know
+  # which subnet to broadcast discovery on. No cloud/network calls are made.
+  network_info_plus: ^6.0.1
+
+  # Unique local player/session ids
+  uuid: ^4.4.0
+
+  # JSON message (de)serialization helpers
+  collection: ^1.18.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  # Asset folders are declared here once you add real files to them.
+  # They are commented out deliberately: Flutter fails the build if a
+  # declared asset directory doesn't exist, and empty directories aren't
+  # tracked by git, so an empty assets/ folder would break CI builds.
+  # Uncomment each line after you drop files into that folder.
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+  #   - assets/sounds/
